@@ -23,6 +23,9 @@ output_path = r'/home/pi/Scaricati/test_adjusted.wav'
 # UUID del beacon da rilevare
 TARGET_UUID = "c994496a4ef24b428f98e018e6828934"
 
+# Definisci la potenza di trasmissione (Tx Power) del beacon
+tx_power = -55  # Modifica questo valore se necessario
+
 def calcola_rms(y):
     return np.sqrt(np.mean(y ** 2))
 
@@ -49,6 +52,18 @@ def analizza_spettro(y, sr):
     plt.ylabel('Ampiezza')
     plt.show()
 
+def parse_manufacturer_data(manufacturer_data):
+    if manufacturer_data.startswith("4c000215"):
+        uuid = manufacturer_data[8:40]  # L'UUID inizia dal 9° carattere
+        major = manufacturer_data[40:44]  # Major è dopo l'UUID
+        minor = manufacturer_data[44:48]  # Minor è dopo Major
+        return uuid, major, minor
+    else:
+        return None, None, None
+
+def calcola_distanza_da_rssi(rssi, tx_power):
+    return 10 ** ((tx_power - rssi) / 20.0)
+
 class ScanDelegate(DefaultDelegate):
     def __init__(self):
         DefaultDelegate.__init__(self)
@@ -72,23 +87,11 @@ class ScanDelegate(DefaultDelegate):
                             print(f"Beacon trovato con indirizzo MAC: {dev.addr}, RSSI: {dev.rssi} dBm")
                             self.beacon_found = True
                             self.device_address = dev.addr
-                            self.device_distance = calcola_distanza_da_rssi(dev.rssi)
-
-def parse_manufacturer_data(manufacturer_data):
-    if manufacturer_data.startswith("4c000215"):
-        uuid = manufacturer_data[8:40]  # L'UUID inizia dal 9° carattere
-        major = manufacturer_data[40:44]  # Major è dopo l'UUID
-        minor = manufacturer_data[44:48]  # Minor è dopo Major
-        return uuid, major, minor
-    else:
-        return None, None, None
-
-def calcola_distanza_da_rssi(rssi, tx_power=-59):
-    return 10 ** ((tx_power - rssi) / 20.0)
+                            self.device_distance = calcola_distanza_da_rssi(dev.rssi, tx_power)
 
 async def rileva_beacon():
     scanner = Scanner().withDelegate(ScanDelegate())
-    devices = scanner.scan(10.0)  # Scansione per 5 secondi
+    devices = scanner.scan(5.0)  # Scansione per 5 secondi
     delegate = scanner.delegate
     if getattr(delegate, 'beacon_found', False):
         return delegate.device_address, delegate.device_distance
@@ -149,14 +152,14 @@ async def main():
                     publish_mqtt(client, topic_distance, str(distanza))
                     
                     if distanza <= 1.0:
-                        alarm_message = "Allarme: Il lavoratore  è troppo vicino!"
+                        alarm_message = "Allarme: Il beacon è troppo vicino!"
                         print(alarm_message)
                         publish_mqtt(client, topic_alarm, alarm_message)
                     else:
-                        print("Il lavoratore si trova a una distanza sicura.")
+                        print("Il beacon si trova a una distanza sicura.")
                 else:
                     print("Beacon non trovato.")
-                    publish_mqtt(client, topic_distance, "Beacon non trovato") 
+                
                 await asyncio.sleep(2)  # Attendi 2 secondi prima della prossima scansione
 
         else:

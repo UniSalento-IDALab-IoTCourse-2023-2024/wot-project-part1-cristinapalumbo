@@ -17,6 +17,7 @@ Questo progetto combina l'analisi del rumore ambientale con il monitoraggio dell
    - Scansione continua dei beacon BLE circostanti per rilevare un beacon specifico (identificato tramite UUID).
    - Quando il beacon viene rilevato, viene calcolata la distanza stimata in base al valore RSSI.
    - Se il beacon si trova a meno di 1 metro, viene inviato un allarme.
+   - La potenza di trasmissione può essere variata in base alla distanza del beacon, aumentandola per distanze maggiori e diminuendola nelle vicinanze
 
 3. **Integrazione con MQTT**:
    - Pubblicazione dei dati di livello di rumore e distanza del beacon su un broker MQTT per il monitoraggio remoto.
