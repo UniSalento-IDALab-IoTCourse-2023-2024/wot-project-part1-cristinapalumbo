@@ -1,4 +1,3 @@
-CARICARE GLI AUDIO 
 # Per vedere la Web Page [Progetto WoT - Palumbo & Pierri](https://unisalento-idalab-iotcourse-2023-2024.github.io/wot-project-presentation-PalumboPierri/)
 
 # Monitoraggio Audio e Distanza Beacon
